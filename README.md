@@ -50,24 +50,6 @@ open [data-channels.tar](data-channels.tar) for golang client code.
 
 you will see console logs of what the siganling server and the clients are doing, according to the API (see below). All the code for the examples is found in the [/examples](/examples) directory.
 
-## Deployment
-
-You can deploy this signaling server on whichever deployment service you are comfortable with, eg. Heroku, GCP, AWS, Azure, Vercel, Netlify, etc. In this section we will see an example of how to deploy the signaling server on **Heroku**. Follow these steps:
-
-1. Do the steps in the **Prerequisites** section in [this](https://devcenter.heroku.com/articles/deploying-nodejs#prerequisites) article and come back once you are done.
-2. In a terminal window run each of the following lines separately (ie. don't copy-paste all the commands at once)
-
-    ```bash
-    heroku login
-    heroku create [name]
-    git push heroku main
-    heroku open
-    ```
-
-    The `[name]` argument allows you to give your signaling server a unique name. You can leave out the `[name]` argument to let Heroku generate a random name.
-
-3. Save the URL you get in the new browser window, which opens once you run `heroku open`, and use it as the **SIGNALING_SERVER_URL** in [/examples/signaling-channel.js](/examples/signaling-channel.js) or [Simple WebRTC Node.js Client](https://github.com/aljanabim/simple_webrtc_nodejs_client).
-
 ## API
 
 The signaling server listens to the following events
