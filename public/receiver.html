@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sender</title>
+    <script src="/socket.io/socket.io.js"></script>
+
+</head>
+
+<body>
+
+    <h1>Receiver B</h1>
+    <video id="remoteVideo" playsinline autoplay muted></video>
+    <script>
+        class SignalingChannel {
+            constructor(peerId, signalingServerUrl, token) {
+                this.peerId = peerId;
+                this.socket = new io(signalingServerUrl, {
+                    auth: { token },
+                    autoConnect: false, // disables auto connection, by default the client would connect to the server as soon as the io() object is instatiated
+                    reconnection: false, // disables auto reconnection, this can occur when for example the host server disconnects. When set to true, the client would keep trying to reconnect
+                    // for a complete list of the available options, see https://socket.io/docs/v4/client-api/#new-Manager-url-options
+                });
+                this.onMessage = () => { };
+            }
+            connect() {
+                this.socket.on("connect", () => {
+                    console.log("Connected with id", this.socket.id);
+                    this.socket.emit("ready", this.peerId);
+                });
+                this.socket.on("disconnect", () => {
+                    console.log("Disconnected");
+                });
+                this.socket.on("connect_error", (error) => {
+                    console.log("Connection error", error.message);
+                });
+                this.socket.on("message", this.onMessage);
+                this.socket.on("uniquenessError", (message) => {
+                    console.error(`Error: ${message.error}`);
+                    // process.exit(1);
+                });
+                this.socket.connect();
+            }
+            send(message) {
+                this.socket.emit("message", { from: this.peerId, target: "all", message });
+            }
+            sendTo(targetPeerId, message) {
+                this.socket.emit("messageOne", { from: this.peerId, target: targetPeerId, message });
+            }
+            disconnect() {
+                if (this.socket) {
+                    this.socket.disconnect();
+                }
+            }
+        }
+        const remoteVideo = document.getElementById('remoteVideo');
+
+        remoteVideo.addEventListener('loadedmetadata', function () {
+            console.log(`Remote video videoWidth: ${this.videoWidth}px,  videoHeight: ${this.videoHeight}px`);
+        });
+
+        remoteVideo.addEventListener('resize', () => {
+            console.log(`Remote video size changed to ${remoteVideo.videoWidth}x${remoteVideo.videoHeight} - Time since pageload ${performance.now().toFixed(0)}ms`);
+            // We'll use the first onsize callback as an indication that video has started
+            // playing out.
+            if (startTime) {
+                const elapsedTime = window.performance.now() - startTime;
+                console.log('Setup time: ' + elapsedTime.toFixed(3) + 'ms');
+                startTime = null;
+            }
+        });
+
+        const peerId = 'testPeer1'
+        // Where the signaling server is hosted, for a local server the port must match the one set in the .env files inside the config directory
+        const port = 3030
+        const signalingServerUrl = 'http://localhost:' + port
+        // Token must match the value defined in the .env filed inside the config directory
+        const token = 'SIGNALING123'
+
+        const localConnection = new RTCPeerConnection()
+
+
+        localConnection.onicecandidate = (e, ev) => {
+            console.log(" NEW ice candidnat!! on localconnection reprinting SDP ")
+        }
+
+        localConnection.addEventListener('track', (e => {
+            if (remoteVideo.srcObject !== e.streams[0]) {
+                remoteVideo.srcObject = e.streams[0];
+                console.log('pc2 received remote stream');
+            }
+
+        }))
+
+        const sendChannel = localConnection.createDataChannel("sender");
+        sendChannel.onmessage = e => console.log("messsage received!!!" + e.data)
+        sendChannel.onopen = e => console.log("open!!!!");
+        sendChannel.onclose = e => console.log("closed!!!!!!");
+
+        localConnection.createOffer().then(async o => {
+            await localConnection.setLocalDescription(o)
+
+        })
+
+        const channel = new SignalingChannel(peerId, signalingServerUrl, token)
+        channel.onMessage = (data) => {
+            console.log(data)
+
+            if (data.message.type === 'init') {
+                // generate offer
+                channel.sendTo(data.from, { offer: localConnection.localDescription })
+            }
+            if (data.message.answer) {
+                const answer = data.message.answer
+                console.log(answer)
+                localConnection.setRemoteDescription(answer).then(a => console.log("done"))
+            }
+        }
+        channel.connect()
+    </script>
+</body>
+
+</html>
