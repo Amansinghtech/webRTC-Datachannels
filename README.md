@@ -44,15 +44,9 @@ yarn start
 
 For an actual implementation of a Node.js WebRTC client that utilizes the API of this signaling server, checkout [Simple WebRTC Node.js Client](https://github.com/aljanabim/simple_webrtc_nodejs_client). Otherwise, you can find starter code for a signaling channel which interacts with the signaling server in [/examples/signaling-channel.js](/examples/signaling-channel.js). To see an **example** of how a client might utilize the signaling server as a signaling channel, run
 
-```bash
-yarn client1
-```
+- visit `localhost:3030/sender` to in on tab, visit `localhost:3030/receiver` to another tab then click on connect button.
 
-and in another terminal window run
-
-```bash
-yarn client2
-```
+open [data-channels.tar](data-channels.tar) for golang client code.
 
 you will see console logs of what the siganling server and the clients are doing, according to the API (see below). All the code for the examples is found in the [/examples](/examples) directory.
 
